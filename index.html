@@ -1526,7 +1526,6 @@
                     </div>
                 </div>
                 <select class="search-select" id="searchType">
-                    <option value="all">All</option>
                     <option value="songs">Songs</option>
                     <option value="albums">Albums</option>
                     <option value="artists">Artists</option>
@@ -2060,7 +2059,7 @@
         async function search() {
             const query = document.getElementById('searchInput').value.trim();
             const type = document.getElementById('searchType').value;
-            
+
             if (!query) {
                 showToast('Please enter a search term', 'warning');
                 return;
@@ -2072,18 +2071,22 @@
                 url: null,
                 name: query,
                 songs: [],
+                albums: [],
+                playlists: [],
+                artists: [],
                 currentPage: 0,
                 totalSongs: 0,
                 hasMore: false,
                 isLoading: false,
                 searchType: type,
-                query: query
+                query: query,
+                loadedIds: new Set()  // Track loaded IDs
             };
 
             switchTab('search-results');
             showLoading('searchResultsGrid');
             document.getElementById('loadMoreContainer').classList.remove('active');
-            
+
             let endpoint = '';
             switch(type) {
                 case 'songs': 
@@ -2101,36 +2104,45 @@
                 default: 
                     endpoint = `/api/search?query=${encodeURIComponent(query)}&page=0&limit=20`;
             }
-            
+
             const data = await fetchAPI(endpoint);
-            
+
             if (data?.data?.results && data.data.results.length > 0) {
                 document.getElementById('searchResultsTitle').innerHTML = `<i class="fas fa-search"></i> "${query}"`;
-                
+
                 const total = data.data.total || data.data.results.length;
                 currentContext.totalSongs = total;
                 currentContext.hasMore = data.data.results.length >= 20;
-                
+
                 if (type === 'albums') {
+                    currentContext.albums = data.data.results;
+                    data.data.results.forEach(a => currentContext.loadedIds.add(a.id));
                     displayAlbums(data.data.results, 'searchResultsGrid');
                 } else if (type === 'playlists') {
+                    currentContext.playlists = data.data.results;
+                    data.data.results.forEach(p => currentContext.loadedIds.add(p.id));
                     displayPlaylists(data.data.results, 'searchResultsGrid');
                 } else if (type === 'artists') {
+                    currentContext.artists = data.data.results;
+                    data.data.results.forEach(a => currentContext.loadedIds.add(a.id));
                     displayArtists(data.data.results, 'searchResultsGrid');
                 } else if (type === 'songs') {
-                    displaySongs(data.data.results, 'searchResultsGrid');
                     currentContext.songs = data.data.results;
+                    data.data.results.forEach(s => currentContext.loadedIds.add(s.id));
+                    displaySongs(data.data.results, 'searchResultsGrid');
                 } else {
                     displayMixedResults(data.data.results, 'searchResultsGrid');
                 }
-                
+
                 document.getElementById('searchResultsInfo').innerHTML = `
-                    <span><i class="fas fa-check-circle"></i> Showing ${data.data.results.length} of ${total > 0 ? total : data.data.results.length} results</span>
+                    <span><i class="fas fa-check-circle"></i> Showing ${data.data.results.length} results</span>
                 `;
-                
-                if (currentContext.hasMore && type !== 'albums' && type !== 'playlists' && type !== 'artists') {
+
+                if (currentContext.hasMore) {
                     document.getElementById('loadMoreContainer').classList.add('active');
                 }
+
+                console.log(`✅ Page 0 loaded: ${data.data.results.length} items`);
             } else {
                 document.getElementById('searchResultsGrid').innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>No results found</p></div>';
                 document.getElementById('searchResultsInfo').innerHTML = '';
@@ -2138,96 +2150,226 @@
         }
 
         async function loadMore() {
-            if (currentContext.isLoading || !currentContext.hasMore) return;
-            
+            if (currentContext.isLoading || !currentContext.hasMore) {
+                console.log('⚠️ Blocked:', { isLoading: currentContext.isLoading, hasMore: currentContext.hasMore });
+                return;
+            }
+
             const btn = document.getElementById('loadMoreBtn');
             const btnText = document.getElementById('loadMoreText');
-            
+
             currentContext.isLoading = true;
             btn.disabled = true;
-            btnText.innerHTML = '<div class="spinner"></div> Loading...';
-            
+            btnText.textContent = 'Loading...';
+
             currentContext.currentPage++;
-            
+
+            console.log(`🔄 Loading page ${currentContext.currentPage} for ${currentContext.type}`);
+
             let endpoint = '';
             let data = null;
-            
+
             if (currentContext.type === 'search') {
                 const { query, searchType, currentPage } = currentContext;
-                
+
                 switch(searchType) {
                     case 'songs': 
                         endpoint = `/api/search/songs?query=${encodeURIComponent(query)}&page=${currentPage}&limit=20`; 
                         break;
+                    case 'albums': 
+                        endpoint = `/api/search/albums?query=${encodeURIComponent(query)}&page=${currentPage}&limit=20`; 
+                        break;
+                    case 'artists': 
+                        endpoint = `/api/search/artists?query=${encodeURIComponent(query)}&page=${currentPage}&limit=20`; 
+                        break;
+                    case 'playlists': 
+                        endpoint = `/api/search/playlists?query=${encodeURIComponent(query)}&page=${currentPage}&limit=20`; 
+                        break;
                     default: 
                         endpoint = `/api/search?query=${encodeURIComponent(query)}&page=${currentPage}&limit=20`;
                 }
-                
+
+                console.log('📡 API:', endpoint);
                 data = await fetchAPI(endpoint);
-                
+
                 if (data?.data?.results && data.data.results.length > 0) {
-                    if (searchType === 'songs') {
-                        displaySongs(data.data.results, 'searchResultsGrid', true);
-                        currentContext.songs = [...currentContext.songs, ...data.data.results];
-                    } else {
-                        displayMixedResults(data.data.results, 'searchResultsGrid', true);
+                    let newItems = [];
+                    let duplicateCount = 0;
+
+                    data.data.results.forEach(item => {
+                        if (!currentContext.loadedIds.has(item.id)) {
+                            newItems.push(item);
+                            currentContext.loadedIds.add(item.id);
+                        } else {
+                            duplicateCount++;
+                        }
+                    });
+
+                    console.log(`✨ New: ${newItems.length}, Duplicates: ${duplicateCount}`);
+
+                    if (newItems.length === 0) {
+                        currentContext.isLoading = false;
+                        btn.disabled = false;
+                        btnText.textContent = 'Load More';
+                        setTimeout(() => loadMore(), 100);
+                        return;
                     }
-                    
+
+                    if (searchType === 'songs') {
+                        currentContext.songs = [...currentContext.songs, ...newItems];
+                        displaySongs(newItems, 'searchResultsGrid', true);
+                    } else if (searchType === 'albums') {
+                        currentContext.albums = [...currentContext.albums, ...newItems];
+                        displayAlbums(newItems, 'searchResultsGrid', true);
+                    } else if (searchType === 'playlists') {
+                        currentContext.playlists = [...currentContext.playlists, ...newItems];
+                        displayPlaylists(newItems, 'searchResultsGrid', true);
+                    } else if (searchType === 'artists') {
+                        currentContext.artists = [...currentContext.artists, ...newItems];
+                        displayArtists(newItems, 'searchResultsGrid', true);
+                    } else {
+                        displayMixedResults(newItems, 'searchResultsGrid', true);
+                    }
+
                     const currentCount = document.querySelectorAll('#searchResultsGrid .card').length;
                     document.getElementById('searchResultsInfo').innerHTML = `
-                        <span><i class="fas fa-check-circle"></i> Showing ${currentCount} of ${currentContext.totalSongs} results</span>
+                        <span><i class="fas fa-check-circle"></i> Showing ${currentCount} results</span>
                     `;
-                    
-                    currentContext.hasMore = data.data.results.length >= 20;
+
+                    currentContext.hasMore = data.data.results.length === 20;
+                    showToast(`+${newItems.length} loaded (Total: ${currentCount})`, 'success');
                 } else {
                     currentContext.hasMore = false;
                 }
+
             } else if (currentContext.type === 'playlist') {
-                // FIXED: Playlist pagination with link parameter
+                // FIXED: Proper playlist pagination
                 endpoint = `/api/playlists?id=${currentContext.id}&page=${currentContext.currentPage}&limit=20`;
-                console.log('Loading playlist page:', endpoint);
-                
+                console.log('📡 API:', endpoint);
+
                 data = await fetchAPI(endpoint);
-                
+
                 if (data?.data?.songs && data.data.songs.length > 0) {
-                    currentContext.songs = [...currentContext.songs, ...data.data.songs];
-                    displaySongs(data.data.songs, 'searchResultsGrid', true);
-                    
+                    console.log(`📦 Received ${data.data.songs.length} songs`);
+
+                    let newSongs = [];
+                    let duplicateCount = 0;
+
+                    if (!currentContext.loadedIds) {
+                        currentContext.loadedIds = new Set(currentContext.songs.map(s => s.id));
+                    }
+
+                    data.data.songs.forEach(song => {
+                        if (!currentContext.loadedIds.has(song.id)) {
+                            newSongs.push(song);
+                            currentContext.loadedIds.add(song.id);
+                        } else {
+                            duplicateCount++;
+                        }
+                    });
+
+                    console.log(`✨ New: ${newSongs.length}, Duplicates: ${duplicateCount}`);
+
+                    if (newSongs.length === 0) {
+                        console.log('⚠️ All duplicates! Loading next page...');
+                        currentContext.isLoading = false;
+                        btn.disabled = false;
+                        btnText.textContent = 'Load More';
+                        setTimeout(() => loadMore(), 100);
+                        return;
+                    }
+
+                    currentContext.songs = [...currentContext.songs, ...newSongs];
+                    displaySongs(newSongs, 'searchResultsGrid', true);
+
+                    const infoMsg = currentContext.totalSongs !== '?' 
+                        ? `Loaded ${currentContext.songs.length} songs (Total: ${currentContext.totalSongs})` 
+                        : `Loaded ${currentContext.songs.length} songs`;
+
                     document.getElementById('searchResultsInfo').innerHTML = `
-                        <span><i class="fas fa-music"></i> Showing ${currentContext.songs.length} of ${currentContext.totalSongs} songs</span>
+                        <span><i class="fas fa-music"></i> ${infoMsg}</span>
                     `;
-                    
-                    currentContext.hasMore = currentContext.songs.length < currentContext.totalSongs;
+
+                    // FIXED: Continue jab tak exactly 20 songs aa rahe hain
+                    currentContext.hasMore = data.data.songs.length === 20;
+
+                    console.log(`✅ Page ${currentContext.currentPage}: +${newSongs.length} (Total: ${currentContext.songs.length})`);
+                    showToast(`+${newSongs.length} songs (Total: ${currentContext.songs.length})`, 'success');
                 } else {
+                    console.log('❌ No more songs from API');
                     currentContext.hasMore = false;
                 }
+
             } else if (currentContext.type === 'artist') {
                 endpoint = `/api/artists/${currentContext.id}/songs?page=${currentContext.currentPage}&sortBy=popularity&sortOrder=desc`;
-                console.log('Loading artist page:', endpoint);
-                
+                console.log('📡 API:', endpoint);
+
                 data = await fetchAPI(endpoint);
-                
+
                 if (data?.data?.songs && data.data.songs.length > 0) {
-                    currentContext.songs = [...currentContext.songs, ...data.data.songs];
-                    displaySongs(data.data.songs, 'searchResultsGrid', true);
-                    
+                    console.log(`📦 Received ${data.data.songs.length} songs`);
+
+                    let newSongs = [];
+                    let duplicateCount = 0;
+
+                    if (!currentContext.loadedIds) {
+                        currentContext.loadedIds = new Set(currentContext.songs.map(s => s.id));
+                    }
+
+                    data.data.songs.forEach(song => {
+                        if (!currentContext.loadedIds.has(song.id)) {
+                            newSongs.push(song);
+                            currentContext.loadedIds.add(song.id);
+                        } else {
+                            duplicateCount++;
+                        }
+                    });
+
+                    console.log(`✨ New: ${newSongs.length}, Duplicates: ${duplicateCount}`);
+
+                    if (newSongs.length === 0) {
+                        currentContext.isLoading = false;
+                        btn.disabled = false;
+                        btnText.textContent = 'Load More';
+                        setTimeout(() => loadMore(), 100);
+                        return;
+                    }
+
+                    currentContext.songs = [...currentContext.songs, ...newSongs];
+                    displaySongs(newSongs, 'searchResultsGrid', true);
+
+                    const infoMsg = currentContext.totalSongs > 0
+                        ? `Loaded ${currentContext.songs.length} of ${currentContext.totalSongs} songs` 
+                        : `Loaded ${currentContext.songs.length} songs`;
+
                     document.getElementById('searchResultsInfo').innerHTML = `
-                        <span><i class="fas fa-music"></i> Showing ${currentContext.songs.length} of ${currentContext.totalSongs} songs</span>
+                        <span><i class="fas fa-music"></i> ${infoMsg}</span>
                     `;
-                    
-                    currentContext.hasMore = currentContext.songs.length < currentContext.totalSongs;
+
+                    // FIXED: Artist API returns 10 songs per page
+                    currentContext.hasMore = data.data.songs.length >= 10;
+
+                    console.log(`✅ Page ${currentContext.currentPage}: +${newSongs.length} (Total: ${currentContext.songs.length})`);
+                    showToast(`+${newSongs.length} songs (Total: ${currentContext.songs.length})`, 'success');
                 } else {
                     currentContext.hasMore = false;
+                    console.log('❌ No more songs');
                 }
             }
-            
+
             if (!currentContext.hasMore) {
                 document.getElementById('loadMoreContainer').classList.remove('active');
-                showToast('All songs loaded', 'success');
+                const totalLoaded = currentContext.songs?.length || 
+                                   currentContext.albums?.length || 
+                                   currentContext.playlists?.length || 
+                                   currentContext.artists?.length || 
+                                   document.querySelectorAll('#searchResultsGrid .card').length;
+                console.log(`🏁 All loaded! Total: ${totalLoaded}`);
+                showToast(`All loaded! Total: ${totalLoaded}`, 'success');
             }
-            
+
             btn.disabled = false;
-            btnText.innerHTML = 'Load More';
+            btnText.textContent = 'Load More';
             currentContext.isLoading = false;
         }
 
@@ -2493,7 +2635,8 @@
             showLoading('searchResultsGrid');
             switchTab('search-results');
             document.getElementById('searchResultsTitle').innerHTML = `<i class="fas fa-list-music"></i> ${playlistName}`;
-            
+            document.getElementById('loadMoreContainer').classList.remove('active');
+
             currentContext = {
                 type: 'playlist',
                 id: playlistId,
@@ -2503,29 +2646,41 @@
                 currentPage: 0,
                 totalSongs: 0,
                 hasMore: false,
-                isLoading: false
+                isLoading: false,
+                loadedIds: new Set()
             };
-            
-            // FIXED: Use link parameter for playlists
+
             const endpoint = `/api/playlists?id=${playlistId}&page=0&limit=20`;
-            console.log('Loading playlist:', endpoint);
-            
+            console.log('📡 Loading playlist:', endpoint);
+
             const data = await fetchAPI(endpoint);
-            
-            if (data?.data?.songs) {
+
+            if (data?.data?.songs && data.data.songs.length > 0) {
                 currentContext.songs = data.data.songs;
-                currentContext.totalSongs = data.data.total || data.data.songCount || data.data.songs.length;
-                currentContext.hasMore = data.data.songs.length >= 20 && currentContext.songs.length < currentContext.totalSongs;
-                
+                data.data.songs.forEach(s => currentContext.loadedIds.add(s.id));
+
+                // FIXED: Don't rely on songCount - check if we got full batch
+                currentContext.hasMore = data.data.songs.length === 20;
+                currentContext.totalSongs = data.data.songCount || '?';
+
                 displaySongs(data.data.songs, 'searchResultsGrid');
+
+                const infoMsg = currentContext.totalSongs !== '?' 
+                    ? `Showing ${data.data.songs.length} songs (Total: ${currentContext.totalSongs})` 
+                    : `Loaded ${data.data.songs.length} songs`;
+
                 document.getElementById('searchResultsInfo').innerHTML = `
-                    <span><i class="fas fa-music"></i> Showing ${data.data.songs.length} of ${currentContext.totalSongs} songs</span>
+                    <span><i class="fas fa-music"></i> ${infoMsg}</span>
                 `;
-                
+
                 if (currentContext.hasMore) {
                     document.getElementById('loadMoreContainer').classList.add('active');
-                    showToast(`Loaded ${data.data.songs.length} of ${currentContext.totalSongs} songs`, 'info');
+                    console.log(`✅ Playlist page 0: ${data.data.songs.length} songs | More: YES`);
+                } else {
+                    console.log(`✅ Playlist page 0: ${data.data.songs.length} songs | More: NO`);
                 }
+            } else {
+                document.getElementById('searchResultsGrid').innerHTML = '<div class="empty-state"><i class="fas fa-music"></i><p>No songs found</p></div>';
             }
         }
 
@@ -2533,7 +2688,8 @@
             showLoading('searchResultsGrid');
             switchTab('search-results');
             document.getElementById('searchResultsTitle').innerHTML = `<i class="fas fa-user"></i> ${artistName}`;
-            
+            document.getElementById('loadMoreContainer').classList.remove('active');
+
             currentContext = {
                 type: 'artist',
                 id: artistId,
@@ -2542,28 +2698,41 @@
                 currentPage: 0,
                 totalSongs: 0,
                 hasMore: false,
-                isLoading: false
+                isLoading: false,
+                loadedIds: new Set()
             };
-            
+
             const endpoint = `/api/artists/${artistId}/songs?page=0&sortBy=popularity&sortOrder=desc`;
-            console.log('Loading artist:', endpoint);
-            
+            console.log('📡 Loading artist:', endpoint);
+
             const data = await fetchAPI(endpoint);
-            
-            if (data?.data?.songs) {
+
+            if (data?.data?.songs && data.data.songs.length > 0) {
                 currentContext.songs = data.data.songs;
+                data.data.songs.forEach(s => currentContext.loadedIds.add(s.id));
                 currentContext.totalSongs = data.data.total || data.data.songs.length;
-                currentContext.hasMore = data.data.songs.length > 0 && currentContext.songs.length < currentContext.totalSongs;
-                
+
+                // FIXED: Artist API returns 10 songs per page, not 20!
+                currentContext.hasMore = data.data.songs.length >= 10;
+
                 displaySongs(data.data.songs, 'searchResultsGrid');
+
+                const infoMsg = currentContext.totalSongs > 0
+                    ? `Showing ${data.data.songs.length} of ${currentContext.totalSongs} songs` 
+                    : `Loaded ${data.data.songs.length} songs`;
+
                 document.getElementById('searchResultsInfo').innerHTML = `
-                    <span><i class="fas fa-music"></i> Showing ${data.data.songs.length} of ${currentContext.totalSongs} songs</span>
+                    <span><i class="fas fa-music"></i> ${infoMsg}</span>
                 `;
-                
+
                 if (currentContext.hasMore) {
                     document.getElementById('loadMoreContainer').classList.add('active');
-                    showToast(`Loaded ${data.data.songs.length} of ${currentContext.totalSongs} songs`, 'info');
+                    console.log(`✅ Artist page 0: ${data.data.songs.length} songs | Load More: VISIBLE`);
+                } else {
+                    console.log(`✅ Artist page 0: ${data.data.songs.length} songs | Load More: HIDDEN`);
                 }
+            } else {
+                document.getElementById('searchResultsGrid').innerHTML = '<div class="empty-state"><i class="fas fa-music"></i><p>No songs found</p></div>';
             }
         }
 
