@@ -2048,6 +2048,60 @@
             }
         }
 
+
+        // Only for second api
+        // Add this helper function after the fetchAPI function
+        function normalizeBackupAPIResponse(songs) {
+            return songs.map(song => {
+                // Transform image array from {quality, link} to {quality, url}
+                const normalizedImage = song.image?.map(img => ({
+                    quality: img.quality,
+                    url: img.link
+                })) || [];
+
+                // Transform downloadUrl array from {quality, link} to {quality, url}
+                const normalizedDownloadUrl = song.downloadUrl?.map(dl => ({
+                    quality: dl.quality,
+                    url: dl.link
+                })) || [];
+
+                // Transform primaryArtists string to artists.primary array
+                const artistNames = song.primaryArtists?.split(', ') || [];
+                const artistIds = song.primaryArtistsId?.split(', ') || [];
+
+                const primaryArtists = artistNames.map((name, index) => ({
+                    id: artistIds[index] || '',
+                    name: name.trim()
+                }));
+
+                // Return normalized song object
+                return {
+                    id: song.id,
+                    name: song.name,
+                    type: song.type || 'song',
+                    album: song.album,
+                    year: song.year,
+                    releaseDate: song.releaseDate,
+                    duration: parseInt(song.duration) || 0,
+                    label: song.label,
+                    explicitContent: song.explicitContent,
+                    playCount: song.playCount,
+                    language: song.language,
+                    hasLyrics: song.hasLyrics === 'true',
+                    url: song.url,
+                    copyright: song.copyright,
+                    image: normalizedImage,
+                    downloadUrl: normalizedDownloadUrl,
+                    artists: {
+                        primary: primaryArtists,
+                        featured: [],
+                        all: primaryArtists
+                    }
+                };
+            });
+        }
+        // End of helper function that is only for second api
+
         async function loadHome() {
             // Show loading for all sections
             showLoading('trendingNow');
@@ -2099,6 +2153,7 @@
                 // Load multiple specific playlists
                 const [data1, data2, data3, data4] = await Promise.all([
                     fetchAPI('/api/search/playlists?query=Most Streamed Love Songs Hindi&page=0&limit=3'),
+                    fetchAPI('/api/search/playlists?query=Most Streamed Love Songs English&page=0&limit=3'),
                     fetchAPI('/api/search/playlists?query=Trending Today&page=0&limit=3'),
                     fetchAPI('/api/search/playlists?query=Most Searched Songs Hindi&page=0&limit=3'),
                     fetchAPI('/api/search/playlists?query=Punjab Se Bollywood&page=0&limit=3')
@@ -2288,6 +2343,14 @@
         async function loadMore() {
             if (currentContext.isLoading || !currentContext.hasMore) {
                 console.log('⚠️ Blocked:', { isLoading: currentContext.isLoading, hasMore: currentContext.hasMore });
+                return;
+            }
+
+            // ✅ NEW: If using backup API, no pagination available
+            if (currentContext.useBackupAPI) {
+                console.log('⚠️ Using backup API - All songs already loaded');
+                document.getElementById('loadMoreContainer').classList.remove('active');
+                showToast('All songs loaded', 'info');
                 return;
             }
 
@@ -2783,19 +2846,22 @@
                 totalSongs: 0,
                 hasMore: false,
                 isLoading: false,
-                loadedIds: new Set()
+                loadedIds: new Set(),
+                useBackupAPI: false  // Track which API is being used
             };
 
+            // Try primary API first
             const endpoint = `/api/playlists?id=${playlistId}&page=0&limit=20`;
-            console.log('📡 Loading playlist:', endpoint);
+            console.log('📡 Loading playlist (Primary API):', endpoint);
 
             const data = await fetchAPI(endpoint);
 
+            // Check if primary API returned valid data
             if (data?.data?.songs && data.data.songs.length > 0) {
+                // Primary API successful
+                console.log('✅ Primary API successful');
                 currentContext.songs = data.data.songs;
                 data.data.songs.forEach(s => currentContext.loadedIds.add(s.id));
-
-                // FIXED: Don't rely on songCount - check if we got full batch
                 currentContext.hasMore = data.data.songs.length === 20;
                 currentContext.totalSongs = data.data.songCount || '?';
 
@@ -2811,13 +2877,128 @@
 
                 if (currentContext.hasMore) {
                     document.getElementById('loadMoreContainer').classList.add('active');
-                    console.log(`✅ Playlist page 0: ${data.data.songs.length} songs | More: YES`);
+                    console.log(`✅ Playlist page 0 (Primary): ${data.data.songs.length} songs | More: YES`);
                 } else {
-                    console.log(`✅ Playlist page 0: ${data.data.songs.length} songs | More: NO`);
+                    console.log(`✅ Playlist page 0 (Primary): ${data.data.songs.length} songs | More: NO`);
                 }
-            } else {
-                document.getElementById('searchResultsGrid').innerHTML = '<div class="empty-state"><i class="fas fa-music"></i><p>No songs found</p></div>';
-            }
+
+
+                // Only for second api
+                } else {
+                    // Primary API failed - use backup API
+                    console.log('⚠️ Primary API failed or returned empty, trying backup API...');
+
+                    try {
+                        const backupEndpoint = `https://jiosaavn-api-codyandersan.vercel.app/playlists?id=${playlistId}`;
+                        console.log('📡 Loading playlist (Backup API):', backupEndpoint);
+
+                        const backupResponse = await fetch(backupEndpoint);
+                        const backupData = await backupResponse.json();
+
+                        console.log('Backup API Response:', backupData);
+
+                        // Check different possible response formats
+                        let songs = null;
+
+                        if (backupData?.data?.songs && backupData.data.songs.length > 0) {
+                            songs = backupData.data.songs;
+                        } else if (backupData?.songs && backupData.songs.length > 0) {
+                            songs = backupData.songs;
+                        } else if (Array.isArray(backupData) && backupData.length > 0) {
+                            songs = backupData;
+                        }
+
+                        if (songs && songs.length > 0) {
+                            // ✅ NORMALIZE backup API response to match primary API format
+                            const normalizedSongs = normalizeBackupAPIResponse(songs);
+
+                            // Backup API successful
+                            currentContext.useBackupAPI = true;
+                            currentContext.songs = normalizedSongs;
+                            normalizedSongs.forEach(s => currentContext.loadedIds.add(s.id));
+                            currentContext.hasMore = false; // No pagination in backup API
+                            currentContext.totalSongs = normalizedSongs.length;
+
+                            displaySongs(normalizedSongs, 'searchResultsGrid');
+
+                            document.getElementById('searchResultsInfo').innerHTML = `
+                                <span><i class="fas fa-music"></i> ${normalizedSongs.length} songs loaded</span>
+                                <span style="margin-left: 1rem; color: var(--accent-secondary);"><i class="fas fa-info-circle"></i> Using alternate source</span>
+                            `;
+
+                            console.log(`✅ Playlist loaded (Backup API): ${normalizedSongs.length} songs`);
+                            showToast(`✓ Loaded ${normalizedSongs.length} songs from backup`, 'success');
+                        } else {
+                            // Both APIs failed
+                            document.getElementById('searchResultsGrid').innerHTML = '<div class="empty-state"><i class="fas fa-music"></i><p>No songs found in this playlist</p></div>';
+                            document.getElementById('searchResultsInfo').innerHTML = '';
+                            console.log('❌ Both APIs failed to load playlist');
+                            showToast('Unable to load playlist songs', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Backup API Error:', error);
+                        document.getElementById('searchResultsGrid').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Failed to load playlist</p><small>Please try again later</small></div>';
+                        document.getElementById('searchResultsInfo').innerHTML = '';
+                        showToast('Failed to load playlist', 'error');
+                    }
+                }
+
+                // for first api
+           /* } else {
+                // Primary API failed - use backup API
+                console.log('⚠️ Primary API failed or returned empty, trying backup API...');
+
+                try {
+                    const backupEndpoint = `https://jiosaavn-api-codyandersan.vercel.app/playlists?id=${playlistId}`;
+                    console.log('📡 Loading playlist (Backup API):', backupEndpoint);
+
+                    const backupResponse = await fetch(backupEndpoint);
+                    const backupData = await backupResponse.json();
+
+                    console.log('Backup API Response:', backupData);
+
+                    // Check different possible response formats
+                    let songs = null;
+
+                    if (backupData?.data?.songs && backupData.data.songs.length > 0) {
+                        songs = backupData.data.songs;
+                    } else if (backupData?.songs && backupData.songs.length > 0) {
+                        songs = backupData.songs;
+                    } else if (Array.isArray(backupData) && backupData.length > 0) {
+                        songs = backupData;
+                    }
+
+                    if (songs && songs.length > 0) {
+                        // Backup API successful
+                        currentContext.useBackupAPI = true;
+                        currentContext.songs = songs;
+                        songs.forEach(s => currentContext.loadedIds.add(s.id));
+                        currentContext.hasMore = false; // No pagination in backup API
+                        currentContext.totalSongs = songs.length;
+
+                        displaySongs(songs, 'searchResultsGrid');
+
+                        document.getElementById('searchResultsInfo').innerHTML = `
+                            <span><i class="fas fa-music"></i> ${songs.length} songs loaded</span>
+                            <span style="margin-left: 1rem; color: var(--accent-secondary);"><i class="fas fa-info-circle"></i> Using alternate source</span>
+                        `;
+
+                        console.log(`✅ Playlist loaded (Backup API): ${songs.length} songs`);
+                        showToast(`✓ Loaded ${songs.length} songs from backup`, 'success');
+                    } else {
+                        // Both APIs failed
+                        document.getElementById('searchResultsGrid').innerHTML = '<div class="empty-state"><i class="fas fa-music"></i><p>No songs found in this playlist</p></div>';
+                        document.getElementById('searchResultsInfo').innerHTML = '';
+                        console.log('❌ Both APIs failed to load playlist');
+                        showToast('Unable to load playlist songs', 'error');
+                    }
+                } catch (error) {
+                    console.error('Backup API Error:', error);
+                    document.getElementById('searchResultsGrid').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Failed to load playlist</p><small>Please try again later</small></div>';
+                    document.getElementById('searchResultsInfo').innerHTML = '';
+                    showToast('Failed to load playlist', 'error');
+                }
+            } */
         }
 
         async function loadArtistSongs(artistId, artistName) {
