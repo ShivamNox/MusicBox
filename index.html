@@ -13,6 +13,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* ✅ DARK THEME (Default) */
         :root {
             --bg-primary: #0a0a0a;
             --bg-secondary: #121212;
@@ -30,6 +31,20 @@
             --header-height: 60px;
         }
 
+        /* ✅ LIGHT THEME */
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #ebebeb;
+            --bg-hover: #e0e0e0;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --text-muted: #808080;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
         html {
             font-size: 16px;
             scroll-behavior: smooth;
@@ -42,37 +57,20 @@
             min-height: 100vh;
             padding-bottom: 160px;
             overflow-x: hidden;
-            position: relative;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         @media (max-width: 768px) {
-            html {
-                font-size: 14px;
-            }
-            body {
-                padding-bottom: 140px;
-            }
+            html { font-size: 14px; }
+            body { padding-bottom: 140px; }
         }
 
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--bg-hover); }
 
-        ::-webkit-scrollbar-track {
-            background: var(--bg-secondary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--bg-tertiary);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--bg-hover);
-        }
-
-        /* ✅ HEADER - COMPACT & SINGLE LINE */
+        /* ========== HEADER ========== */
         .header {
             background: var(--bg-secondary);
             height: var(--header-height);
@@ -85,7 +83,6 @@
         }
 
         .header-content {
-            max-width: 100%;
             height: 100%;
             padding: 0 0.75rem;
             display: flex;
@@ -93,7 +90,64 @@
             gap: 0.75rem;
         }
 
-        .menu-toggle {
+        /* Left: Menu + Logo */
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Center: Desktop Search (HIDDEN on mobile) */
+        .desktop-search {
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            .desktop-search {
+                display: flex;
+                flex: 1;
+                max-width: 600px;
+                margin: 0 auto;
+            }
+        }
+
+        /* Right: Search Icon + Theme */
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-left: auto;
+        }
+
+        /* Mobile Search Icon (HIDDEN on desktop) */
+        .search-icon-mobile {
+            display: flex;
+            background: transparent;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 1rem;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        @media (min-width: 768px) {
+            .search-icon-mobile { display: none; }
+        }
+
+        .search-icon-mobile:active { transform: scale(0.9); }
+
+        @media (hover: hover) {
+            .search-icon-mobile:hover { background: var(--bg-tertiary); }
+        }
+
+        /* Buttons */
+        .menu-toggle,
+        .theme-toggle {
             background: transparent;
             border: none;
             width: 40px;
@@ -109,15 +163,16 @@
             flex-shrink: 0;
         }
 
-        .menu-toggle:active {
-            transform: scale(0.9);
-        }
+        .menu-toggle:active,
+        .theme-toggle:active { transform: scale(0.9); }
 
         @media (hover: hover) {
-            .menu-toggle:hover {
-                background: var(--bg-tertiary);
-            }
+            .menu-toggle:hover,
+            .theme-toggle:hover { background: var(--bg-tertiary); }
         }
+
+        .theme-toggle i { transition: transform 0.3s ease; }
+        .theme-toggle:active i { transform: rotate(180deg); }
 
         .logo {
             display: flex;
@@ -128,7 +183,6 @@
             background: var(--accent-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
             flex-shrink: 0;
         }
 
@@ -143,83 +197,7 @@
             50% { transform: scale(1.1); }
         }
 
-        /* Desktop Search - Always Visible */
-        .desktop-search {
-            display: none;
-            flex: 1;
-            max-width: 600px;
-        }
-
-        @media (min-width: 768px) {
-            .desktop-search {
-                display: flex;
-            }
-        }
-
-        /* Mobile Search Icon */
-        .search-icon-mobile {
-            display: flex;
-            background: transparent;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            color: var(--text-primary);
-            cursor: pointer;
-            font-size: 1rem;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            margin-left: auto;
-        }
-
-        @media (min-width: 768px) {
-            .search-icon-mobile {
-                display: none;
-            }
-        }
-
-        .search-icon-mobile:active {
-            transform: scale(0.9);
-        }
-
-        @media (hover: hover) {
-            .search-icon-mobile:hover {
-                background: var(--bg-tertiary);
-            }
-        }
-
-        /* Mobile Search Bar (Expandable) */
-        .mobile-search-bar {
-            display: none;
-            padding: 0.5rem 0.75rem;
-            gap: 0.5rem;
-            align-items: center;
-            border-top: 1px solid var(--border-color);
-            animation: slideDown 0.3s ease;
-        }
-
-        .mobile-search-bar.active {
-            display: flex;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media (min-width: 768px) {
-            .mobile-search-bar {
-                display: none !important;
-            }
-        }
-
+        /* ========== SEARCH COMPONENTS ========== */
         .search-container {
             display: flex;
             gap: 0.5rem;
@@ -229,12 +207,11 @@
         .search-wrapper {
             flex: 1;
             position: relative;
-            min-width: 0;
         }
 
         .search-input {
             width: 100%;
-            padding: 0.5rem 2.25rem 0.5rem 2.25rem;
+            padding: 0.5rem 2.25rem;
             border: 1px solid var(--border-color);
             border-radius: 20px;
             font-size: 0.85rem;
@@ -275,10 +252,16 @@
             border-radius: 50%;
             align-items: center;
             justify-content: center;
+            transition: all 0.3s;
         }
 
-        .search-clear.active {
-            display: flex;
+        .search-clear.active { display: flex; }
+
+        @media (hover: hover) {
+            .search-clear:hover {
+                background: var(--accent-primary);
+                color: white;
+            }
         }
 
         .search-select {
@@ -290,7 +273,6 @@
             color: var(--text-primary);
             cursor: pointer;
             outline: none;
-            flex-shrink: 0;
         }
 
         .search-btn {
@@ -307,14 +289,81 @@
             gap: 0.4rem;
             transition: all 0.3s;
             box-shadow: 0 4px 12px rgba(220, 20, 60, 0.3);
-            flex-shrink: 0;
         }
 
-        .search-btn:active {
-            transform: scale(0.95);
+        .search-btn:active { transform: scale(0.95); }
+
+        /* ========== MOBILE SEARCH MODAL ========== */
+        .mobile-search-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 2500;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 20vh;
         }
 
-        /* ✅ SIDEBAR */
+        .mobile-search-modal.active { display: flex; }
+
+        /* Hide on desktop */
+        @media (min-width: 768px) {
+            .mobile-search-modal { display: none !important; }
+        }
+
+        .mobile-search-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .mobile-search-content {
+            position: relative;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            animation: slideUp 0.3s ease;
+            z-index: 1;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .mobile-search-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .mobile-search-header h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .mobile-search-body {
+            padding: 1.25rem;
+        }
+
+        .mobile-search-body .search-select {
+            width: 100%;
+            margin-top: 0.75rem;
+        }
+
+        /* ========== SIDEBAR ========== */
         .sidebar-overlay {
             position: fixed;
             top: 0;
@@ -349,9 +398,7 @@
             border-right: 1px solid var(--border-color);
         }
 
-        .sidebar.active {
-            left: 0;
-        }
+        .sidebar.active { left: 0; }
 
         .sidebar-header {
             padding: 1rem;
@@ -359,7 +406,6 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border-color);
-            flex-shrink: 0;
             height: 70px;
         }
 
@@ -369,9 +415,7 @@
             padding: 1rem 0;
         }
 
-        .sidebar-section {
-            margin-bottom: 1.5rem;
-        }
+        .sidebar-section { margin-bottom: 1.5rem; }
 
         .sidebar-section-title {
             font-size: 0.75rem;
@@ -396,45 +440,31 @@
             align-items: center;
             gap: 1rem;
             transition: all 0.3s;
-            position: relative;
             text-align: left;
         }
 
-        .sidebar-item:active {
-            transform: scale(0.98);
-        }
+        .sidebar-item:active { transform: scale(0.98); }
 
         @media (hover: hover) {
             .sidebar-item:hover {
                 background: var(--bg-tertiary);
                 color: var(--text-primary);
             }
-
-            .sidebar-item:hover i {
-                color: var(--accent-primary);
-            }
+            .sidebar-item:hover i { color: var(--accent-primary); }
         }
 
         .sidebar-item i {
             font-size: 1.1rem;
             width: 24px;
             text-align: center;
-            transition: color 0.3s;
         }
 
-        .sidebar-item span:first-of-type {
-            flex: 1;
-        }
-
-        .sidebar-item .badge {
-            position: static;
-            margin-left: auto;
-        }
+        .sidebar-item span:first-of-type { flex: 1; }
+        .sidebar-item .badge { position: static; margin-left: auto; }
 
         .sidebar-footer {
             padding: 1rem;
             border-top: 1px solid var(--border-color);
-            flex-shrink: 0;
         }
 
         .sidebar-stats {
@@ -465,7 +495,6 @@
             font-size: 0.65rem;
             color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .icon-btn-header {
@@ -484,14 +513,10 @@
             position: relative;
         }
 
-        .icon-btn-header:active {
-            transform: scale(0.9);
-        }
+        .icon-btn-header:active { transform: scale(0.9); }
 
         @media (hover: hover) {
-            .icon-btn-header:hover {
-                background: var(--accent-primary);
-            }
+            .icon-btn-header:hover { background: var(--accent-primary); }
         }
 
         .badge {
@@ -508,7 +533,8 @@
             text-align: center;
         }
 
-        /* ✅ NAV TABS */
+
+        /* NAV TABS */
         .nav-tabs {
             background: var(--bg-secondary);
             padding: 0.5rem;
@@ -572,7 +598,7 @@
             font-size: 0.85rem;
         }
 
-        /* ✅ CONTAINER */
+        /* CONTAINER */
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -917,7 +943,7 @@
             border-radius: 50%;
         }
 
-        /* ✅ MUSIC PLAYER */
+        /* MUSIC PLAYER */
         .music-player {
             position: fixed;
             bottom: 0;
@@ -928,6 +954,10 @@
             z-index: 1000;
             box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(20px);
+        }
+
+        [data-theme="light"] .music-player {
+            box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.08);
         }
 
         .player-mini {
@@ -950,6 +980,10 @@
             object-fit: cover;
             flex-shrink: 0;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        [data-theme="light"] .player-img {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .player-details {
@@ -1089,6 +1123,10 @@
                 color: var(--text-primary);
                 background: rgba(255, 255, 255, 0.1);
             }
+
+            [data-theme="light"] .control-btn:hover {
+                background: rgba(0, 0, 0, 0.05);
+            }
         }
 
         .control-btn.active {
@@ -1147,7 +1185,7 @@
             transition: width 0.1s;
         }
 
-        /* ✅ FULLSCREEN PLAYER */
+        /* FULLSCREEN PLAYER */
         .fullscreen-player {
             position: fixed;
             top: 0;
@@ -1262,6 +1300,10 @@
                 color: var(--text-primary);
                 background: rgba(255, 255, 255, 0.1);
             }
+
+            [data-theme="light"] .fullscreen-control-btn:hover {
+                background: rgba(0, 0, 0, 0.05);
+            }
         }
 
         .fullscreen-control-btn.active {
@@ -1299,6 +1341,10 @@
             align-items: center;
             justify-content: center;
             transition: all 0.3s;
+        }
+
+        [data-theme="light"] .fullscreen-action-btn {
+            background: rgba(0, 0, 0, 0.03);
         }
 
         .fullscreen-action-btn:active {
@@ -1381,7 +1427,7 @@
             }
         }
 
-        /* ✅ MODALS */
+        /* MODALS */
         .modal {
             display: none;
             position: fixed;
@@ -1395,6 +1441,10 @@
             align-items: flex-end;
             justify-content: center;
             padding: 0;
+        }
+
+        [data-theme="light"] .modal {
+            background: rgba(0, 0, 0, 0.5);
         }
 
         .modal.active {
@@ -1484,7 +1534,7 @@
             border: none;
             border-radius: 20px;
             background: var(--accent-gradient);
-            color: var(--text-primary);
+            color: white;
             cursor: pointer;
             font-size: 0.85rem;
             font-weight: 600;
@@ -1745,12 +1795,75 @@
                 color: var(--accent-primary);
             }
         }
+
+        /* Just make sure you have this at end: */
+        @media (max-width: 767px) {
+            .header-content { padding: 0 0.5rem; gap: 0.5rem; }
+            .header-left { gap: 0.5rem; }
+            .header-right { gap: 0.4rem; }
+        }
+
+        @media (min-width: 768px) {
+            .header-content { padding: 0 1rem; }
+        }
+
+        /* Mobile pe desktop search HIDE karo */
+        @media (max-width: 767px) {
+            .desktop-search {
+                display: none !important;
+            }
+        }
+
+        /* Desktop pe mobile search icon HIDE karo */
+        @media (min-width: 768px) {
+            .search-icon-mobile {
+                display: none !important;
+            }
+        }
+
+        /* Desktop Search - HIDDEN on mobile */
+        .desktop-search {
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            .desktop-search {
+                display: flex !important;
+                flex: 1;
+                max-width: 600px;
+                margin: 0 auto;
+            }
+        }
+
+        /* Mobile Search Icon - HIDDEN on desktop */
+        .search-icon-mobile {
+            display: flex;
+            background: transparent;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 1rem;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        @media (min-width: 768px) {
+            .search-icon-mobile {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
-        <!-- Header -->
-        <div class="header">
-            <div class="header-content">
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <!-- Left: Menu + Logo -->
+            <div class="header-left">
                 <button class="menu-toggle" onclick="toggleSidebar()" title="Menu">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -1758,35 +1871,51 @@
                     <i class="fas fa-compact-disc"></i>
                     <span>MusicBox</span>
                 </div>
+            </div>
 
-                <!-- Desktop Search (always visible) -->
-                <div class="search-container desktop-search">
-                    <div class="search-wrapper">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" class="search-input" id="searchInput" placeholder="Search songs, artists, albums..." enterkeyhint="search">
-                        <div class="search-clear" id="searchClear" onclick="clearSearch()">
-                            <i class="fas fa-times"></i>
-                        </div>
+            <!-- Center: Desktop Search (visible only on desktop) -->
+            <div class="search-container desktop-search">
+                <div class="search-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search songs, artists, albums..." enterkeyhint="search">
+                    <div class="search-clear" id="searchClear" onclick="clearSearch()">
+                        <i class="fas fa-times"></i>
                     </div>
-                    <select class="search-select" id="searchType">
-                        <option value="songs">Songs</option>
-                        <option value="albums">Albums</option>
-                        <option value="artists">Artists</option>
-                        <option value="playlists">Playlists</option>
-                    </select>
-                    <button class="search-btn" onclick="search()">
-                        <i class="fas fa-search"></i>
-                    </button>
                 </div>
-
-                <!-- Mobile Search Icon -->
-                <button class="search-icon-mobile" onclick="toggleMobileSearch()" title="Search">
+                <select class="search-select" id="searchType">
+                    <option value="songs">Songs</option>
+                    <option value="albums">Albums</option>
+                    <option value="artists">Artists</option>
+                    <option value="playlists">Playlists</option>
+                </select>
+                <button class="search-btn" onclick="search()">
                     <i class="fas fa-search"></i>
                 </button>
             </div>
 
-            <!-- Mobile Search Bar (hidden by default) -->
-            <div class="mobile-search-bar" id="mobileSearchBar">
+            <!-- Right: Search Icon (mobile only) + Theme Toggle -->
+            <div class="header-right">
+                <button class="search-icon-mobile" onclick="openMobileSearch()" title="Search">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+                    <i class="fas fa-sun" id="themeIcon"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Search Modal (Popup) -->
+    <div class="mobile-search-modal" id="mobileSearchModal">
+        <div class="mobile-search-overlay" onclick="closeMobileSearch()"></div>
+        <div class="mobile-search-content">
+            <div class="mobile-search-header">
+                <h3>Search</h3>
+                <button class="close-btn" onclick="closeMobileSearch()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mobile-search-body">
                 <div class="search-wrapper">
                     <i class="fas fa-search search-icon"></i>
                     <input type="text" class="search-input" id="searchInputMobile" placeholder="Search songs, artists, albums..." enterkeyhint="search">
@@ -1800,11 +1929,13 @@
                     <option value="artists">Artists</option>
                     <option value="playlists">Playlists</option>
                 </select>
-                <button class="search-btn" onclick="searchMobile()">
+                <button class="search-btn" onclick="searchMobile()" style="width: 100%; margin-top: 0.75rem;">
                     <i class="fas fa-search"></i>
+                    <span>Search</span>
                 </button>
             </div>
         </div>
+    </div>
 
         <!-- Sidebar Overlay -->
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -2363,144 +2494,278 @@
         <audio id="audioPlayer"></audio>
 
     <script>
-        const API_BASE = 'https://saavn.sumit.co';
+    const API_BASE = 'https://saavn.sumit.co';
 
-        let currentSong = null;
-        let queue = [];
-        let currentIndex = -1;
-        let playlists = JSON.parse(localStorage.getItem('playlists')) || [];
-        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-        let recentlyPlayed = JSON.parse(localStorage.getItem('recentlyPlayed')) || [];
-        let isPlaying = false;
-        let isShuffleOn = false;
-        let repeatMode = 'off';
-        let playerExpanded = false;
-        const audio = document.getElementById('audioPlayer');
-        let currentPlaylistForAdd = null;
+    let currentSong = null;
+    let queue = [];
+    let currentIndex = -1;
+    let playlists = JSON.parse(localStorage.getItem('playlists')) || [];
+    let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+    let recentlyPlayed = JSON.parse(localStorage.getItem('recentlyPlayed')) || [];
+    let isPlaying = false;
+    let isShuffleOn = false;
+    let repeatMode = 'off';
+    let playerExpanded = false;
+    const audio = document.getElementById('audioPlayer');
+    let currentPlaylistForAdd = null;
+    let wakeLock = null; // ✅ NEW
 
-        let currentContext = {
-            type: null,
-            id: null,
-            url: null,
-            name: null,
-            songs: [],
-            currentPage: 0,
-            totalSongs: 0,
-            hasMore: false,
-            isLoading: false
-        };
+    let currentContext = {
+        type: null,
+        id: null,
+        url: null,
+        name: null,
+        songs: [],
+        currentPage: 0,
+        totalSongs: 0,
+        hasMore: false,
+        isLoading: false
+    };
 
-        let settings = JSON.parse(localStorage.getItem('settings')) || {
-            audioQuality: 'high',
-            playbackSpeed: 1
-        };
+    let settings = JSON.parse(localStorage.getItem('settings')) || {
+        audioQuality: 'high',
+        playbackSpeed: 1
+    };
 
-        window.onload = function() {
-            loadHome();
-            setupAudioListeners();
-            updateMyPlaylistsDisplay();
-            setupSearchListener();
-            updateStats();
-            updateBadges();
-            loadSettings();
-        };
+    // ✅ BACKGROUND PLAYBACK - Wake Lock
+    async function requestWakeLock() {
+        if ('wakeLock' in navigator) {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Wake Lock activated');
+                wakeLock.addEventListener('release', () => {
+                    console.log('Wake Lock released');
+                });
+            } catch (err) {
+                console.log('Wake Lock not supported:', err);
+            }
+        }
+    }
 
-        function setupAudioListeners() {
-            audio.addEventListener('timeupdate', updateProgress);
-            audio.addEventListener('ended', handleSongEnd);
-            audio.addEventListener('loadedmetadata', function() {
-                document.getElementById('duration').textContent = formatTime(audio.duration);
+    function releaseWakeLock() {
+        if (wakeLock !== null) {
+            wakeLock.release().then(() => {
+                wakeLock = null;
             });
         }
+    }
 
-        function handleSongEnd() {
-            if (repeatMode === 'one') {
-                audio.currentTime = 0;
-                audio.play();
-            } else {
+    // ✅ Re-request wake lock when page becomes visible
+    document.addEventListener('visibilitychange', async () => {
+        if (wakeLock !== null && document.visibilityState === 'visible') {
+            await requestWakeLock();
+        }
+    });
+
+    // ✅ IMPROVED MEDIA SESSION
+    function setupMediaSession(song) {
+        if ('mediaSession' in navigator) {
+            const imageUrl = song.image?.[2]?.url || song.image?.[1]?.url || 'https://via.placeholder.com/512';
+            const artistName = song.artists?.primary?.map(a => a.name).join(', ') || 'Unknown Artist';
+
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: song.name || 'Unknown Song',
+                artist: artistName,
+                album: song.album?.name || 'MusicBox',
+                artwork: [
+                    { src: imageUrl, sizes: '96x96', type: 'image/jpeg' },
+                    { src: imageUrl, sizes: '128x128', type: 'image/jpeg' },
+                    { src: imageUrl, sizes: '192x192', type: 'image/jpeg' },
+                    { src: imageUrl, sizes: '256x256', type: 'image/jpeg' },
+                    { src: imageUrl, sizes: '384x384', type: 'image/jpeg' },
+                    { src: imageUrl, sizes: '512x512', type: 'image/jpeg' }
+                ]
+            });
+
+            navigator.mediaSession.setActionHandler('play', () => {
+                audio.play().then(() => {
+                    isPlaying = true;
+                    updatePlayPauseButtons();
+                });
+            });
+
+            navigator.mediaSession.setActionHandler('pause', () => {
+                audio.pause();
+                isPlaying = false;
+                updatePlayPauseButtons();
+            });
+
+            navigator.mediaSession.setActionHandler('previoustrack', () => {
+                previousSong();
+            });
+
+            navigator.mediaSession.setActionHandler('nexttrack', () => {
                 nextSong();
-            }
-        }
+            });
 
-        function setupSearchListener() {
-            const searchInput = document.getElementById('searchInput');
-            const searchInputMobile = document.getElementById('searchInputMobile');
+            navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+                audio.currentTime = Math.max(audio.currentTime - (details.seekOffset || 10), 0);
+            });
 
-            searchInput.addEventListener('input', function(e) {
-                const clearBtn = document.getElementById('searchClear');
-                if (e.target.value.length > 0) {
-                    clearBtn.classList.add('active');
+            navigator.mediaSession.setActionHandler('seekforward', (details) => {
+                audio.currentTime = Math.min(audio.currentTime + (details.seekOffset || 10), audio.duration);
+            });
+
+            navigator.mediaSession.setActionHandler('seekto', (details) => {
+                if (details.fastSeek && 'fastSeek' in audio) {
+                    audio.fastSeek(details.seekTime);
                 } else {
-                    clearBtn.classList.remove('active');
+                    audio.currentTime = details.seekTime;
                 }
             });
 
-            searchInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    search();
-                }
-            });
-
-            searchInputMobile.addEventListener('input', function(e) {
-                const clearBtn = document.getElementById('searchClearMobile');
-                if (e.target.value.length > 0) {
-                    clearBtn.classList.add('active');
-                } else {
-                    clearBtn.classList.remove('active');
-                }
-            });
-
-            searchInputMobile.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    searchMobile();
-                }
-            });
+            updatePositionState();
         }
+    }
 
-        function toggleMobileSearch() {
-            const mobileSearchBar = document.getElementById('mobileSearchBar');
-            mobileSearchBar.classList.toggle('active');
-            if (mobileSearchBar.classList.contains('active')) {
-                document.getElementById('searchInputMobile').focus();
+    function updatePositionState() {
+        if ('setPositionState' in navigator.mediaSession) {
+            if (audio.duration && !isNaN(audio.duration)) {
+                navigator.mediaSession.setPositionState({
+                    duration: audio.duration,
+                    playbackRate: audio.playbackRate,
+                    position: audio.currentTime
+                });
             }
         }
+    }
 
-        function clearSearch() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('searchClear').classList.remove('active');
+    // ✅ WINDOW ONLOAD
+    window.onload = function() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const themeIcon = document.getElementById('themeIcon');
+        if (themeIcon) {
+            themeIcon.className = savedTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
         }
 
-        function clearMobileSearch() {
-            document.getElementById('searchInputMobile').value = '';
-            document.getElementById('searchClearMobile').classList.remove('active');
-        }
+        loadHome();
+        setupAudioListeners();
+        updateMyPlaylistsDisplay();
+        setupSearchListener();
+        setupMobileSearchListener();
+        updateStats();
+        updateBadges();
+        loadSettings();
+    };
 
-        function searchMobile() {
-            const query = document.getElementById('searchInputMobile').value.trim();
-            const type = document.getElementById('searchTypeMobile').value;
+    // ✅ IMPROVED AUDIO LISTENERS
+    function setupAudioListeners() {
+        audio.addEventListener('timeupdate', () => {
+            updateProgress();
+            updatePositionState();
+        });
 
-            if (!query) {
-                showToast('Please enter a search term', 'warning');
-                return;
+        audio.addEventListener('ended', handleSongEnd);
+
+        audio.addEventListener('loadedmetadata', function() {
+            document.getElementById('duration').textContent = formatTime(audio.duration);
+            updatePositionState();
+        });
+
+        // ✅ Handle interruptions
+        audio.addEventListener('pause', () => {
+            if (isPlaying && !audio.ended) {
+                setTimeout(() => {
+                    if (document.visibilityState === 'visible') {
+                        audio.play().catch(() => {});
+                    }
+                }, 100);
             }
+        });
 
-            document.getElementById('mobileSearchBar').classList.remove('active');
-            performSearch(query, type);
-        }
-
-        function search() {
-            const query = document.getElementById('searchInput').value.trim();
-            const type = document.getElementById('searchType').value;
-
-            if (!query) {
-                showToast('Please enter a search term', 'warning');
-                return;
+        // ✅ Prevent pause on visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && isPlaying && audio.paused) {
+                audio.play().catch(() => {});
             }
+        });
+    }
 
-            performSearch(query, type);
+    function handleSongEnd() {
+        if (repeatMode === 'one') {
+            audio.currentTime = 0;
+            audio.play();
+        } else {
+            nextSong();
         }
+    }
+
+    function setupSearchListener() {
+        const searchInput = document.getElementById('searchInput');
+
+        searchInput.addEventListener('input', function(e) {
+            const clearBtn = document.getElementById('searchClear');
+            if (e.target.value.length > 0) {
+                clearBtn.classList.add('active');
+            } else {
+                clearBtn.classList.remove('active');
+            }
+        });
+
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                search();
+            }
+        });
+    }
+
+    function setupMobileSearchListener() {
+        const searchInputMobile = document.getElementById('searchInputMobile');
+        if (!searchInputMobile) return;
+
+        searchInputMobile.addEventListener('input', function(e) {
+            const clearBtn = document.getElementById('searchClearMobile');
+            if (e.target.value.length > 0) {
+                clearBtn.classList.add('active');
+            } else {
+                clearBtn.classList.remove('active');
+            }
+        });
+
+        searchInputMobile.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchMobile();
+            }
+        });
+    }
+
+    function clearSearch() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchClear').classList.remove('active');
+    }
+
+    function clearMobileSearch() {
+        document.getElementById('searchInputMobile').value = '';
+        document.getElementById('searchClearMobileSearchClearMobile').classList.remove('active');
+    }
+
+    function search() {
+        const query = document.getElementById('searchInput').value.trim();
+        const type = document.getElementById('searchType').value;
+
+        if (!query) {
+            showToast('Please enter a search term', 'warning');
+            return;
+        }
+
+        performSearch(query, type);
+    }
+
+    function searchMobile() {
+        const query = document.getElementById('searchInputMobile').value.trim();
+        const type = document.getElementById('searchTypeMobile').value;
+
+        if (!query) {
+            showToast('Please enter a search term', 'warning');
+            return;
+        }
+
+        closeMobileSearch();
+        performSearch(query, type);
+    }
 
         async function performSearch(query, type) {
             currentContext = {
@@ -2774,6 +3039,9 @@
 
         function loadTrendingPlaylistsTab() {
             switchTab('trending-playlists');
+            if (!document.getElementById('trendingPlaylistsGrid').innerHTML) {
+                loadTrendingPlaylists();
+            }
         }
 
         async function loadTrendingAlbums() {
@@ -2786,6 +3054,9 @@
 
         function loadTrendingAlbumsTab() {
             switchTab('trending-albums');
+            if (!document.getElementById('trendingAlbumsGrid').innerHTML) {
+                loadTrendingAlbums();
+            }
         }
 
         async function filterPlaylists(category) {
@@ -3398,6 +3669,7 @@
             playSong(song, songIndex);
         }
 
+        // ✅ IMPROVED PLAY SONG FUNCTION
         function playSong(song, songIndex = -1) {
             currentSong = song;
 
@@ -3424,54 +3696,21 @@
             if (downloadUrl) {
                 audio.src = downloadUrl;
                 audio.playbackRate = settings.playbackSpeed;
-                audio.play().catch(err => {
+                audio.preload = 'auto'; // ✅ IMPORTANT
+
+                audio.play().then(() => {
+                    isPlaying = true;
+                    updatePlayerUI();
+                    updatePlayPauseButtons();
+                    updateFullscreenPlayerUI();
+                    requestWakeLock(); // ✅ REQUEST WAKE LOCK
+                }).catch(err => {
                     console.error('Play error:', err);
                     showToast('Playback failed', 'error');
                 });
-                isPlaying = true;
-                updatePlayerUI();
-                updatePlayPauseButtons();
+
                 addToRecentlyPlayed(song);
-                updateFullscreenPlayerUI();
-
-                if ('mediaSession' in navigator) {
-                    const imageUrl = song.image?.[2]?.url || song.image?.[1]?.url || 'https://via.placeholder.com/512';
-                    const artistName = song.artists?.primary?.map(a => a.name).join(', ') || 'Unknown Artist';
-
-                    navigator.mediaSession.metadata = new MediaMetadata({
-                        title: song.name || 'Unknown Song',
-                        artist: artistName,
-                        album: song.album?.name || 'MusicBox',
-                        artwork: [
-                            { src: imageUrl, sizes: '96x96', type: 'image/jpeg' },
-                            { src: imageUrl, sizes: '128x128', type: 'image/jpeg' },
-                            { src: imageUrl, sizes: '192x192', type: 'image/jpeg' },
-                            { src: imageUrl, sizes: '256x256', type: 'image/jpeg' },
-                            { src: imageUrl, sizes: '384x384', type: 'image/jpeg' },
-                            { src: imageUrl, sizes: '512x512', type: 'image/jpeg' }
-                        ]
-                    });
-
-                    navigator.mediaSession.setActionHandler('play', () => {
-                        audio.play();
-                        isPlaying = true;
-                        updatePlayPauseButtons();
-                    });
-
-                    navigator.mediaSession.setActionHandler('pause', () => {
-                        audio.pause();
-                        isPlaying = false;
-                        updatePlayPauseButtons();
-                    });
-
-                    navigator.mediaSession.setActionHandler('previoustrack', () => {
-                        previousSong();
-                    });
-
-                    navigator.mediaSession.setActionHandler('nexttrack', () => {
-                        nextSong();
-                    });
-                }
+                setupMediaSession(song); // ✅ SETUP MEDIA SESSION
             } else {
                 console.error('No download URL found');
                 showToast('Song URL unavailable', 'error');
@@ -3493,6 +3732,7 @@
             updateStats();
         }
 
+        // ✅ IMPROVED TOGGLE PLAY/PAUSE
         function togglePlayPause(event) {
             if (event) event.stopPropagation();
 
@@ -3504,9 +3744,12 @@
             if (isPlaying) {
                 audio.pause();
                 isPlaying = false;
+                releaseWakeLock(); // ✅ RELEASE WAKE LOCK
             } else {
-                audio.play();
-                isPlaying = true;
+                audio.play().then(() => {
+                    isPlaying = true;
+                    requestWakeLock(); // ✅ REQUEST WAKE LOCK
+                });
             }
             updatePlayPauseButtons();
         }
@@ -4283,7 +4526,6 @@
         }
 
         function updateBadges() {
-            // Main badges
             const queueBadge = document.getElementById('queueBadge');
             const sidebarQueueBadge = document.getElementById('sidebarQueueBadge');
 
@@ -4301,7 +4543,6 @@
                 if (sidebarQueueBadge) sidebarQueueBadge.style.display = 'none';
             }
 
-            // Favorites badges
             const sidebarFavBadge = document.getElementById('sidebarFavBadge');
             if (favorites.length > 0 && sidebarFavBadge) {
                 sidebarFavBadge.textContent = favorites.length;
@@ -4310,7 +4551,6 @@
                 sidebarFavBadge.style.display = 'none';
             }
 
-            // Recent badges
             const sidebarRecentBadge = document.getElementById('sidebarRecentBadge');
             if (recentlyPlayed.length > 0 && sidebarRecentBadge) {
                 sidebarRecentBadge.textContent = recentlyPlayed.length;
@@ -4319,7 +4559,6 @@
                 sidebarRecentBadge.style.display = 'none';
             }
 
-            // Playlist badge
             const sidebarPlaylistBadge = document.getElementById('sidebarPlaylistBadge');
             if (playlists.length > 0 && sidebarPlaylistBadge) {
                 sidebarPlaylistBadge.textContent = playlists.length;
@@ -4330,7 +4569,6 @@
         }
 
         function updateStats() {
-            // Main stats
             const statSongs = document.getElementById('statSongs');
             const statPlaylists = document.getElementById('statPlaylists');
             const statFavorites = document.getElementById('statFavorites');
@@ -4339,7 +4577,6 @@
             if (statPlaylists) statPlaylists.textContent = playlists.length;
             if (statFavorites) statFavorites.textContent = favorites.length;
 
-            // Sidebar stats
             const sidebarStatSongs = document.getElementById('sidebarStatSongs');
             const sidebarStatPlaylists = document.getElementById('sidebarStatPlaylists');
             const sidebarStatFavorites = document.getElementById('sidebarStatFavorites');
@@ -4382,10 +4619,55 @@
             return div.innerHTML;
         }
 
+        // ✅ MOBILE SEARCH FUNCTIONS
+        function openMobileSearch() {
+            const modal = document.getElementById('mobileSearchModal');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.getElementById('searchInputMobile').focus();
+            }, 300);
+        }
+
+        function closeMobileSearch() {
+            const modal = document.getElementById('mobileSearchModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // ✅ THEME TOGGLE
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            const icon = document.getElementById('themeIcon');
+
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+
+            if (newTheme === 'light') {
+                icon.className = 'fas fa-moon';
+            } else {
+                icon.className = 'fas fa-sun';
+            }
+
+            showToast(`${newTheme === 'light' ? 'Light' : 'Dark'} theme activated`, 'success');
+        }
+
+        // ✅ EVENT LISTENERS
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', function(e) {
                 if (e.target === this) closeModal(this.id);
             });
+        });
+
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('mobileSearchModal');
+            if (modal && modal.classList.contains('active')) {
+                if (e.target.classList.contains('mobile-search-overlay')) {
+                    closeMobileSearch();
+                }
+            }
         });
 
         document.addEventListener('keydown', function(e) {
@@ -4411,6 +4693,9 @@
                     break;
             }
         });
-    </script>
+
+        </script>
+
+        
 </body>
 </html>
