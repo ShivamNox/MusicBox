@@ -2239,6 +2239,57 @@
             animation: shimmer 1.5s infinite;
             animation-delay: 0.1s;
         }
+
+        /* ========================================
+           PLAYER LOADING STATE
+        ======================================== */
+
+        /* Spinner animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Disable buttons during loading */
+        .control-btn-mini[disabled],
+        .control-btn[disabled],
+        .fullscreen-control-btn[disabled] {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Player image loading overlay */
+        .player-img.loading::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            border-radius: var(--radius-sm);
+            z-index: 1;
+        }
+
+        .player-img.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            z-index: 2;
+        }
     </style>
 </head>
 <body>
@@ -3410,6 +3461,7 @@
                 `;
             }
         }
+            
 
         // ✅ FIXED: Show YouTube section properly
         function showYouTubeSection() {
@@ -3567,6 +3619,58 @@
             grid.innerHTML = append ? grid.innerHTML + resultsHTML : resultsHTML;
         }
 
+        // ========== PLAYER LOADING STATE ==========
+        function showPlayerLoadingState(isLoading) {
+            // Mini player button
+            const playPauseBtnMini = document.getElementById('playPauseBtnMini');
+            if (playPauseBtnMini) {
+                if (isLoading) {
+                    playPauseBtnMini.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    playPauseBtnMini.disabled = true;
+                } else {
+                    const icon = isPlaying ? 'pause' : 'play';
+                    playPauseBtnMini.innerHTML = `<i class="fas fa-${icon}"></i>`;
+                    playPauseBtnMini.disabled = false;
+                }
+            }
+
+            // Full player button
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            if (playPauseBtn) {
+                if (isLoading) {
+                    playPauseBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    playPauseBtn.disabled = true;
+                } else {
+                    const icon = isPlaying ? 'pause' : 'play';
+                    playPauseBtn.innerHTML = `<i class="fas fa-${icon}"></i>`;
+                    playPauseBtn.disabled = false;
+                }
+            }
+
+            // Fullscreen player button
+            const fullscreenBtn = document.getElementById('fullscreenPlayPauseBtn');
+            if (fullscreenBtn) {
+                if (isLoading) {
+                    fullscreenBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    fullscreenBtn.disabled = true;
+                } else {
+                    const icon = isPlaying ? 'pause' : 'play';
+                    fullscreenBtn.innerHTML = `<i class="fas fa-${icon}"></i>`;
+                    fullscreenBtn.disabled = false;
+                }
+            }
+
+            // Player image loading overlay
+            const playerImg = document.getElementById('playerImgMini');
+            if (playerImg) {
+                if (isLoading) {
+                    playerImg.classList.add('loading');
+                } else {
+                    playerImg.classList.remove('loading');
+                }
+            }
+        }
+        
         async function playYouTubeVideo(index) {
             const video = youtubeResults[index];
             if (!video) return;
@@ -3592,12 +3696,11 @@
             };
 
             currentSong = youtubeSong;
-            updatePlayerUI(true);
-            updateFullscreenPlayerUI(true);
+            updatePlayerUI(false);
+            updateFullscreenPlayerUI(false);
 
-            isPlaying = false;
-            updatePlayPauseButtons();
-
+            // ✅ STEP 1: Show loading
+            showPlayerLoadingState(true);
             showToast('⏳ Loading from YouTube...', 'info');
 
             try {
@@ -3610,15 +3713,14 @@
                         { quality: '320kbps', url: audioData.link }
                     ];
 
-                    updatePlayerUI(false);
-                    updateFullscreenPlayerUI(false);
-
                     audio.src = audioData.link;
                     audio.playbackRate = settings.playbackSpeed;
                     audio.preload = 'auto';
 
                     audio.play()
                         .then(() => {
+                            // ✅ STEP 2: Hide loading on success
+                            showPlayerLoadingState(false);
                             isPlaying = true;
                             updatePlayPauseButtons();
                             requestWakeLock();
@@ -3626,6 +3728,8 @@
                         })
                         .catch(err => {
                             console.error('Play error:', err);
+                            // ✅ STEP 3: Hide loading on error
+                            showPlayerLoadingState(false);
                             isPlaying = false;
                             updatePlayPauseButtons();
                             showToast('Playback failed', 'error');
@@ -3643,14 +3747,14 @@
                     updateBadges();
                     updateStats();
                 } else {
-                    updatePlayerUI(false);
-                    updateFullscreenPlayerUI(false);
+                    // ✅ STEP 4: Hide loading if no audio link
+                    showPlayerLoadingState(false);
                     showToast('Failed to load YouTube audio', 'error');
                 }
             } catch (error) {
                 console.error('YouTube play error:', error);
-                updatePlayerUI(false);
-                updateFullscreenPlayerUI(false);
+                // ✅ STEP 5: Hide loading on catch error
+                showPlayerLoadingState(false);
                 showToast('Failed to play YouTube video', 'error');
             }
         }
